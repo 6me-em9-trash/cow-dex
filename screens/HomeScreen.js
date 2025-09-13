@@ -1,29 +1,59 @@
-import React, { useState } from 'react';
-import Carousel from 'react-native-snap-carousel';
-import { Image, ImageBackground } from 'react-native';
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
   StatusBar,
   Alert,
   TextInput,
-} from 'react-native';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFonts, Poppins_700Bold, Poppins_400Regular } from '@expo-google-fonts/poppins';
-import * as ImagePicker from 'expo-image-picker';
-import CATTLE_BREEDS from '../data/breeds'; // Assuming this path is correct
+  Image,
+  ImageBackground,
+  Dimensions,
+  FlatList,
+} from "react-native";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFonts, Poppins_700Bold, Poppins_400Regular } from "@expo-google-fonts/poppins";
+import * as ImagePicker from "expo-image-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
+import CATTLE_BREEDS from "../data/breeds";
 
-// A new, more flexible component for the grid buttons
-const GridButton = ({ onPress, color, text, icon, iconSet, image }) => {
-  const IconComponent = iconSet === 'Feather' ? Feather : MaterialCommunityIcons;
+const { width } = Dimensions.get("window");
+
+// --- Custom Carousel Component ---
+const CustomCarousel = ({ data }) => {
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.gridButton, { backgroundColor: color }]}> 
-      {/* Image Size Change: Adjust width/height below to change image size */}
-      {image && <Image source={image} style={{ width: 150, height: 150, marginBottom: text ? 8 : 0 }} resizeMode="contain" />}
+    <View style={styles.carouselContainer}>
+      <FlatList
+        data={data}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.carouselItemCustom}>
+            <Image source={item.image} style={styles.carouselImageCustom} resizeMode="cover" />
+            
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+// --- Grid Button Component (kept for future use) ---
+const GridButton = ({ onPress, color, text, icon, iconSet, image }) => {
+  const IconComponent = iconSet === "Feather" ? Feather : MaterialCommunityIcons;
+  return (
+    <TouchableOpacity onPress={onPress} style={[styles.gridButton, { backgroundColor: color }]}>
+      {image && (
+        <Image
+          source={image}
+          style={{ width: 150, height: 150, marginBottom: text ? 8 : 0 }}
+          resizeMode="contain"
+        />
+      )}
       {!image && icon && <IconComponent name={icon} size={36} color="white" />}
       {text && <Text style={styles.gridButtonText}>{text}</Text>}
     </TouchableOpacity>
@@ -31,52 +61,44 @@ const GridButton = ({ onPress, color, text, icon, iconSet, image }) => {
 };
 
 const HomeScreen = ({ navigation }) => {
-  // --- No changes to any of the logic/functions ---
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+
   const carouselItems = [
-    {
-      title: 'CattleDex',
-      image: require('../assets/background.jpg'),
-    },
-    {
-      title: 'Camera',
-      image: require('../assets/camera.png'),
-    },
-    {
-      title: 'Icon',
-      image: require('../assets/icon.png'),
-    },
-    {
-      title: 'Library',
-      image: require('../assets/adaptive-icon.png'),
-    },
+    { title: "CattleDex", image: require("../assets/background.jpg") },
+    { title: "Camera", image: require("../assets/camera.png") },
+    { title: "Icon", image: require("../assets/icon.png") },
+    { title: "Library", image: require("../assets/adaptive-icon.png") },
   ];
 
-  const renderCarouselItem = ({ item, index }) => {
-    return (
-      <View style={{ backgroundColor: '#fff', borderRadius: 12, height: 180, alignItems: 'center', justifyContent: 'center', padding: 10 }}>
-        <Image source={item.image} style={{ width: 120, height: 120, borderRadius: 8 }} resizeMode="contain" />
-        <Text style={{ marginTop: 10, fontWeight: 'bold', fontSize: 16 }}>{item.title}</Text>
-      </View>
-    );
-  };
   let [fontsLoaded] = useFonts({ Poppins_700Bold, Poppins_400Regular });
+  if (!fontsLoaded) return null;
 
-  if (!fontsLoaded) {
-    return null;
-  }
-
+  // --- Camera ---
   const handleCameraPress = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (permissionResult.granted === false) { Alert.alert("Permission Required", "Please allow camera access."); return; }
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 0.5, base64: true });
-    if (!result.canceled) { navigation.navigate('Result', { imageUri: result.assets[0].uri, imageBase64: result.assets[0].base64 }); }
+    if (!permissionResult.granted) {
+      Alert.alert("Permission Required", "Please allow camera access.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+      base64: true,
+    });
+    if (!result.canceled) {
+      navigation.navigate("Result", {
+        imageUri: result.assets[0].uri,
+        imageBase64: result.assets[0].base64,
+      });
+    }
   };
 
+  // --- Upload ---
   const handleUploadPress = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (permissionResult.granted === false) {
+      if (!permissionResult.granted) {
         Alert.alert("Permission Required", "Please allow photo library access.");
         return;
       }
@@ -88,7 +110,7 @@ const HomeScreen = ({ navigation }) => {
         base64: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        navigation.navigate('Result', {
+        navigation.navigate("Result", {
           imageUri: result.assets[0].uri,
           imageBase64: result.assets[0].base64,
         });
@@ -103,18 +125,22 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  // --- Search ---
   const handleSearchSubmit = () => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return;
     const foundBreed = CATTLE_BREEDS.find((breed) => breed.name.toLowerCase() === query);
-    if (foundBreed) { navigation.navigate('Detail', { breed: foundBreed }); setSearchQuery(''); }
-    else { Alert.alert("Not Found", `The breed "${searchQuery}" was not found.`); }
+    if (foundBreed) {
+      navigation.navigate("Detail", { breed: foundBreed });
+      setSearchQuery("");
+    } else {
+      Alert.alert("Not Found", `The breed "${searchQuery}" was not found.`);
+    }
   };
 
-  // --- JSX and UI Structure Updated ---
   return (
     <ImageBackground
-      source={require('../assets/background.jpg')}
+      source={require("../assets/background.jpg")}
       style={styles.background}
       resizeMode="cover"
       pointerEvents="box-none"
@@ -126,20 +152,11 @@ const HomeScreen = ({ navigation }) => {
           </View>
 
           {/* Carousel Section */}
-          <View style={{ marginVertical: 16 }}>
-            <Carousel
-              data={carouselItems}
-              renderItem={renderCarouselItem}
-              sliderWidth={350}
-              itemWidth={200}
-              loop={true}
-              autoplay={true}
-              autoplayInterval={3500}
-            />
-          </View>
+          <CustomCarousel data={carouselItems} />
 
           <Text style={styles.subtitle}>What cattle breed are you looking for?</Text>
 
+          {/* Search Bar */}
           <View style={styles.searchContainer}>
             <Feather name="search" size={22} color="#f8f6f691" />
             <TextInput
@@ -152,32 +169,32 @@ const HomeScreen = ({ navigation }) => {
               returnKeyType="search"
             />
           </View>
-
-          {/* ...existing code... */}
         </View>
       </SafeAreaView>
-      {/* Bottom Navigation Bar - moved outside SafeAreaView for touch priority */}
+
+      {/* Bottom Navigation Bar */}
       <View style={styles.navBar} pointerEvents="auto">
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          {/* Upload button on the left */}
+        <View style={styles.navRow}>
           <TouchableOpacity style={styles.navItem} onPress={handleUploadPress}>
             <Feather name="upload" size={24} color="#555" />
             <Text style={styles.navText}>UPLOAD</Text>
           </TouchableOpacity>
 
-          {/* Center Camera Button */}
           <View style={styles.navCenterItem}>
             <TouchableOpacity
               onPress={handleCameraPress}
-              style={{ justifyContent: 'center', alignItems: 'center', width: 80, height: 80 }}
+              style={styles.cameraButton}
               activeOpacity={0.7}
             >
-              <Image source={require('../assets/camera.png')} style={{ width: 60, height: 60 }} resizeMode="contain" />
+              <Image
+                source={require("../assets/camera.png")}
+                style={{ width: 60, height: 60 }}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           </View>
 
-          {/* Library Button on the right */}
-          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Library')}>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate("Library")}>
             <MaterialCommunityIcons name="book-open-variant" size={24} color="#555" />
             <Text style={styles.navText}>LIBRARY</Text>
           </TouchableOpacity>
@@ -187,79 +204,40 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-// --- Styles updated to match the new design ---
+// --- Styles ---
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
+  background: { flex: 1, width: "100%", height: "100%" },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
-  circle: {
-    position: 'absolute',
-    borderRadius: 500,
-    backgroundColor: 'rgba(67, 189, 172, 0.15)',
-    zIndex: 0,
-  },
-  circleOne: {
-    width: 200,
-    height: 200,
-    top: -50,
-    left: -80,
-  },
-  circleTwo: {
-    width: 300,
-    height: 300,
-    top: 150,
-    right: -150,
-  },
-  grid1:{
-    borderRadius : 20,
-  },
-  circleThree: {
-    width: 150,
-    height: 150,
-    bottom: 50,
-    left: -50,
+    backgroundColor: "transparent",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   contentContainer: {
     flex: 1,
     zIndex: 1,
     paddingHorizontal: 25,
-    paddingBottom: 100, // Prevents content from overlapping navBar
-    backgroundColor: 'transparent',
+    paddingBottom: 100,
+    backgroundColor: "transparent",
   },
-  header: {
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingBottom: 10,
-  },
-  title: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 40,
-    color: '#f8f8f8ff', // Darker teal
-  },
+  header: { alignItems: "center", paddingTop: 40, paddingBottom: 10 },
+  title: { fontFamily: "Poppins_700Bold", fontSize: 40, color: "#f8f8f8ff" },
   subtitle: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     fontSize: 18,
-    color: 'rgba(0, 105, 92, 1)',
-    textAlign: 'center',
+    color: "rgba(0, 105, 92, 1)",
+    textAlign: "center",
     marginBottom: 25,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.64)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.64)",
     borderRadius: 30,
     paddingHorizontal: 20,
     height: 55,
     marginBottom: 30,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -268,93 +246,92 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    fontFamily: 'Poppins_400Regular',
-    color: '#020101ff',
+    fontFamily: "Poppins_400Regular",
+    color: "#020101ff",
   },
-  gridWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 150,
-    // HEight Change: Adjust the marginTop or marginBottom below to move the grid up or down
-    // Example: marginTop: 40,
+
+  // --- Custom Carousel Styles ---
+  carouselContainer: { marginTop: 20 },
+  carouselItemCustom: {
+    width: width,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  grid: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  carouselImageCustom: {
+    width: width * 0.9,
+    height: 200,
+    borderRadius: 10,
   },
-  gridButton: {
-    width: 130,
-    height: 130,
-    borderRadius: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+  carouselTitle: {
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
   },
-  gridButtonText: {
-    fontFamily: 'Poppins_700Bold',
-    color: 'white',
-    fontSize: 22,
-  },
+
   navBar: {
-    flexDirection: 'row',
+    flexDirection: "row",
     height: 80,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "space-around",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     zIndex: 100,
   },
-  navItem: {
-    alignItems: 'center',
-    flex: 1,
+  navRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
   },
+  navItem: { alignItems: "center", flex: 1 },
   navText: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     fontSize: 10,
-    color: '#555',
+    color: "#555",
     marginTop: 4,
   },
   navCenterItem: {
     width: 130,
     height: 130,
     borderRadius: 75,
-    backgroundColor: '#0a2c3aff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 80, // Lifts the button up
-
+    backgroundColor: "#0a2c3aff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 80,
   },
-  navCenterText: {
-      fontFamily: 'Poppins_700Bold',
-      fontSize: 10,
-      color: 'white',
-      position: 'absolute',
-      bottom: -18,
+  cameraButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: 80,
   },
-
-  uploadButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-    borderRadius: 20,
-    alignSelf: 'center',
+  gridButton: {
+    width: 130,
+    height: 130,
+    borderRadius: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  gridButtonText: {
+    fontFamily: "Poppins_700Bold",
+    color: "white",
+    fontSize: 22,
   },
 });
 

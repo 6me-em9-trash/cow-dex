@@ -1,5 +1,5 @@
 // CattleDexScreen.js (or DetailScreen.js)
-import React, { useState, useRef } from 'react'; // <-- IMPORT useRef and Animated
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
-  Animated, // <-- IMPORT Animated
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -23,12 +23,9 @@ const DetailScreen = ({ route }) => {
   const [selectedBreed, setSelectedBreed] = useState(breed);
   const [searchText, setSearchText] = useState('');
 
-  // --- NEW: ANIMATION AND FLIP STATE SETUP ---
   const [isFlipped, setIsFlipped] = useState(false);
-  // Use useRef to hold the animated value so it persists across re-renders
   const animatedValue = useRef(new Animated.Value(0)).current;
 
-  // Interpolate the animated value to create the rotation effect
   const frontInterpolate = animatedValue.interpolate({
     inputRange: [0, 180],
     outputRange: ['0deg', '180deg'],
@@ -38,20 +35,17 @@ const DetailScreen = ({ route }) => {
     outputRange: ['180deg', '360deg'],
   });
 
-  // Animation styles to be applied to the front and back views
   const frontAnimatedStyle = { transform: [{ rotateY: frontInterpolate }] };
   const backAnimatedStyle = { transform: [{ rotateY: backInterpolate }] };
 
-  // Function to trigger the flip animation
   const flipCard = () => {
     setIsFlipped(!isFlipped);
     Animated.timing(animatedValue, {
       toValue: isFlipped ? 0 : 180,
-      duration: 600, // Animation duration in milliseconds
-      useNativeDriver: true, // Use native driver for better performance
+      duration: 600,
+      useNativeDriver: true,
     }).start();
   };
-  // --- END OF NEW ANIMATION SETUP ---
 
   const filteredBreeds = CATTLE_BREEDS.filter(b =>
     b.name.toLowerCase().includes(searchText.toLowerCase())
@@ -65,7 +59,6 @@ const DetailScreen = ({ route }) => {
         selectedBreed.id === item.id && styles.selectedSmallBreedCard,
       ]}
       onPress={() => {
-        // When a new breed is selected, reset the flip state
         if (isFlipped) {
           flipCard();
         }
@@ -77,16 +70,14 @@ const DetailScreen = ({ route }) => {
   );
 
   return (
-    <LinearGradient
-      colors={[color, '#16213e']}
-      style={styles.container}>
+    <LinearGradient colors={[color, '#16213e']} style={styles.container}>
       <Image
         source={require('../assets/adaptive-icon.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
 
-      {/* Header (No changes here) */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.searchContainer}>
           <Icon name="search-outline" size={24} color="#888" />
@@ -108,13 +99,13 @@ const DetailScreen = ({ route }) => {
 
       {selectedBreed && (
         <View style={styles.contentArea}>
-          {/* --- MODIFIED: WRAP CARD IN A TOUCHABLE OPACITY TO TRIGGER FLIP --- */}
+          {/* Flippable Card */}
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={flipCard}
             style={styles.flippableView}>
-            
-            {/* --- CARD FRONT --- */}
+
+            {/* Card Front */}
             <Animated.View style={[styles.flipCard, styles.flipCardFront, frontAnimatedStyle]}>
               <LinearGradient
                 colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
@@ -137,25 +128,20 @@ const DetailScreen = ({ route }) => {
                   resizeMode="contain"
                 />
                 <Text style={styles.mainBreedName}>{selectedBreed.name}</Text>
-                {/* A little prompt to let the user know they can tap */}
                 <Text style={styles.tapToFlipText}>Tap for details</Text>
               </LinearGradient>
             </Animated.View>
 
-            {/* --- CARD BACK --- */}
+            {/* Card Back */}
             <Animated.View style={[styles.flipCard, styles.flipCardBack, backAnimatedStyle]}>
               <LinearGradient
                 colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.mainBreedCard}>
-                
-                {/* --- NEW: WRAP BACK CONTENT IN SCROLLVIEW --- */}
                 <ScrollView contentContainerStyle={styles.backCardContentContainer}>
                   <Text style={styles.mainBreedName}>{selectedBreed.name} Details</Text>
-                  <Text style={styles.descriptionText}>
-                    {selectedBreed.description}
-                  </Text>
+                  <Text style={styles.descriptionText}>{selectedBreed.description}</Text>
                   <View style={styles.mainBreedDetails}>
                     <View style={styles.detailItem}>
                       <Text style={styles.detailLabel}>Weight:</Text>
@@ -192,8 +178,8 @@ const DetailScreen = ({ route }) => {
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
-          {/* --- END OF MODIFIED CARD SECTION --- */}
-          
+
+          {/* Horizontal Scroll of Small Breeds */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -202,14 +188,11 @@ const DetailScreen = ({ route }) => {
           </ScrollView>
         </View>
       )}
-
-      
     </LinearGradient>
   );
 };
 
-
-// --- ADD NEW STYLES AND MODIFY EXISTING ONES ---
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -218,7 +201,7 @@ const styles = StyleSheet.create({
   backgroundImage: {
     position: 'absolute',
     width: '100%',
-    marginLeft: '20',
+    marginLeft: 20, // ✅ fixed (number, not string)
     height: '100%',
     opacity: 0.1,
   },
@@ -272,27 +255,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  // NEW: Container for the flippable view
   flippableView: {
     width: '100%',
     aspectRatio: 0.7,
   },
-  // NEW: Base style for both front and back cards
   flipCard: {
     width: '100%',
     height: '100%',
     position: 'absolute',
-    backfaceVisibility: 'hidden', // This is key for the flip effect
+    backfaceVisibility: 'hidden',
   },
-  // NEW: Specific style for the front card (not really needed but good for clarity)
-  flipCardFront: {
-    // Starts visible
-  },
-  // NEW: Specific style for the back card (initially rotated away)
-  flipCardBack: {
-    // Starts hidden
-  },
-  // RENAMED from mainBreedCard (this is now the inner style for the gradient)
+  flipCardFront: {},
+  flipCardBack: {},
   mainBreedCard: {
     width: '100%',
     height: '100%',
@@ -303,10 +277,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
     borderWidth: 1,
   },
-  // NEW: Content container for the back card's scrollview
   backCardContentContainer: {
     alignItems: 'center',
-    paddingBottom: 20, // Add padding to avoid content sticking to the bottom
+    paddingBottom: 20,
   },
   mainBreedHeader: {
     flexDirection: 'row',
@@ -328,9 +301,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   mainBreedImage: {
-    width: '120%',
-    height: '120%',
-    height: '45%',
+    width: '100%',
+    height: '45%', // ✅ fixed (removed duplicate)
     borderRadius: 15,
   },
   mainBreedName: {
@@ -340,7 +312,6 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     textAlign: 'center',
   },
-  // NEW: A little hint for the user
   tapToFlipText: {
     fontSize: 12,
     color: '#888',
@@ -349,10 +320,9 @@ const styles = StyleSheet.create({
   mainBreedDetails: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around', // Changed to space-around for better wrapping
+    justifyContent: 'space-around',
     width: '100%',
   },
-  // NEW: Style for each individual detail item on the back
   detailItem: {
     minWidth: '45%',
     marginBottom: 10,
@@ -360,7 +330,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     color: '#aaa',
-    fontSize: 12, // Increased font size slightly for readability
+    fontSize: 12,
     marginBottom: 2,
   },
   detailRow: {
@@ -400,11 +370,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     textAlign: 'center',
-  },
-  bottomRightSparkle: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
   },
 });
 

@@ -9,14 +9,13 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
-  ScrollView // Import ScrollView
+  ScrollView,
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts, Poppins_700Bold, Poppins_400Regular } from '@expo-google-fonts/poppins';
 import CATTLE_BREEDS from '../data/breeds';
 
-// --- IMPORTANT: MAKE SURE YOUR RENDER URL IS CORRECT ---
 const BACKEND_URL = 'https://cowdex-project.onrender.com/predict';
 
 const ResultScreen = ({ route, navigation }) => {
@@ -38,12 +37,11 @@ const ResultScreen = ({ route, navigation }) => {
         return;
       }
       try {
-        const payload = { image: imageBase64 };
-        const response = await axios.post(BACKEND_URL, payload);
+        const response = await axios.post(BACKEND_URL, { image: imageBase64 });
         setPrediction(response.data);
       } catch (err) {
         console.error("Error getting prediction:", err);
-        setError("Could not get a prediction. The server may be busy or an error occurred.");
+        setError(err.response?.data?.message || "Could not get a prediction. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -53,7 +51,10 @@ const ResultScreen = ({ route, navigation }) => {
 
   const handleFindInLibrary = () => {
     if (!prediction) return;
-    const foundBreed = CATTLE_BREEDS.find((breed) => breed.name.toLowerCase() === prediction.breed.toLowerCase().replace(/_/g, ' '));
+    const cleanPrediction = prediction.breed.replace(/_/g, ' ').toLowerCase();
+    const foundBreed = CATTLE_BREEDS.find(
+      (breed) => breed.name.toLowerCase().includes(cleanPrediction)
+    );
     if (foundBreed) {
       const breedIndex = CATTLE_BREEDS.findIndex(b => b.id === foundBreed.id);
       const cardColor = ['#48D0B0', '#59A8F4', '#F5C54E', '#8D6DE8', '#F7706A', '#F79E4E'][breedIndex % 6];
@@ -81,7 +82,10 @@ const ResultScreen = ({ route, navigation }) => {
       );
     }
     if (prediction) {
-      const confidencePercent = Math.round(prediction.confidence * 100);
+      const confidencePercent = prediction?.confidence
+        ? Math.round(Number(prediction.confidence) * 100)
+        : 0;
+
       return (
         <View style={styles.centeredContent}>
           <Text style={styles.resultLabel}>PREDICTED BREED</Text>
@@ -103,9 +107,7 @@ const ResultScreen = ({ route, navigation }) => {
     return null;
   };
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -118,8 +120,7 @@ const ResultScreen = ({ route, navigation }) => {
       
       <MaterialCommunityIcons name="pokeball" style={styles.backgroundIcon} size={250} />
 
-      {/* Changed View to ScrollView to prevent overflow */}
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Image source={{ uri: imageUri }} style={styles.image} />
         <View style={styles.resultBox}>
           {renderContent()}
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
-    marginBottom: 20, // <-- THIS IS THE FIX
+    marginBottom: 20,
   },
   centeredContent: {
     alignItems: 'center',

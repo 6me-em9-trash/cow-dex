@@ -16,10 +16,11 @@ export default function App() {
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
-          headerStyle: { backgroundColor: '#F4F6F-7' },
+          headerStyle: { backgroundColor: '#F4F6F7' }, // ✅ fixed color
           headerTintColor: '#333',
           headerTitleStyle: { fontWeight: 'bold' },
-        }}>
+        }}
+      >
         <Stack.Screen
           name="Home"
           component={HomeScreen}
@@ -28,14 +29,13 @@ export default function App() {
         <Stack.Screen
           name="Library"
           component={LibraryScreen}
-          options={{ title: 'Library' , headerShown: false }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Detail"
           component={DetailScreen}
-          options={{ headerShown: false }} // <-- CHANGE IS HERE
+          options={{ headerShown: false }} // keep full-screen look
         />
-        {/* Add the new ResultScreen to the navigator */}
         <Stack.Screen
           name="Result"
           component={ResultScreen}
