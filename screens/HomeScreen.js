@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Image,
   ImageBackground,
   Dimensions,
-  FlatList,
+  Animated,
 } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFonts, Poppins_700Bold, Poppins_400Regular } from "@expo-google-fonts/poppins";
@@ -20,55 +20,82 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CATTLE_BREEDS from "../data/breeds";
 
 const { width } = Dimensions.get("window");
+const CARD_WIDTH = width * 0.7;
+const SPACING = 20;
 
-// --- Custom Carousel Component ---
+// --- Custom Carousel with 3D effect + auto-scroll + pause on manual swipe ---
 const CustomCarousel = ({ data }) => {
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const isManuallyScrolling = useRef(false);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      if (isManuallyScrolling.current) return; // pause if user is scrolling
+
+      let nextIndex = currentIndex + 1;
+      if (nextIndex >= data.length) nextIndex = 0;
+
+      flatListRef.current.scrollToOffset({
+        offset: nextIndex * (CARD_WIDTH + SPACING),
+        animated: true,
+      });
+
+      setCurrentIndex(nextIndex);
+    }, 3000); // 3 seconds auto-scroll
+
+    return () => clearInterval(interval);
+  }, [currentIndex]);
+
   return (
     <View style={styles.carouselContainer}>
-      <FlatList
+      <Animated.FlatList
+        ref={flatListRef}
         data={data}
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.carouselItemCustom}>
-            <Image source={item.image} style={styles.carouselImageCustom} resizeMode="cover" />
-            
-          </View>
+        keyExtractor={(item) => item.id}
+        snapToInterval={CARD_WIDTH + SPACING}
+        decelerationRate="fast"
+        bounces={false}
+        contentContainerStyle={{ paddingHorizontal: (width - CARD_WIDTH) / 2 }}
+        onScrollBeginDrag={() => {
+          isManuallyScrolling.current = true;
+        }}
+        onScrollEndDrag={() => {
+          isManuallyScrolling.current = false;
+        }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: true }
         )}
+        renderItem={({ item, index }) => {
+          const inputRange = [
+            (index - 1) * (CARD_WIDTH + SPACING),
+            index * (CARD_WIDTH + SPACING),
+            (index + 1) * (CARD_WIDTH + SPACING),
+          ];
+          const scale = scrollX.interpolate({
+            inputRange,
+            outputRange: [0.8, 1, 0.8],
+            extrapolate: "clamp",
+          });
+
+          return (
+            <Animated.View style={[styles.carouselItemCustom, { transform: [{ scale }] }]}>
+              <Image source={{ uri: item.image }} style={styles.carouselImageCustom} resizeMode="cover" />
+              <Text style={styles.carouselTitle}>{item.name}</Text>
+            </Animated.View>
+          );
+        }}
       />
     </View>
   );
 };
 
-// --- Grid Button Component (kept for future use) ---
-const GridButton = ({ onPress, color, text, icon, iconSet, image }) => {
-  const IconComponent = iconSet === "Feather" ? Feather : MaterialCommunityIcons;
-  return (
-    <TouchableOpacity onPress={onPress} style={[styles.gridButton, { backgroundColor: color }]}>
-      {image && (
-        <Image
-          source={image}
-          style={{ width: 150, height: 150, marginBottom: text ? 8 : 0 }}
-          resizeMode="contain"
-        />
-      )}
-      {!image && icon && <IconComponent name={icon} size={36} color="white" />}
-      {text && <Text style={styles.gridButtonText}>{text}</Text>}
-    </TouchableOpacity>
-  );
-};
-
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
-
-  const carouselItems = [
-    { title: "CattleDex", image: require("../assets/background.jpg") },
-    { title: "Camera", image: require("../assets/camera.png") },
-    { title: "Icon", image: require("../assets/icon.png") },
-    { title: "Library", image: require("../assets/adaptive-icon.png") },
-  ];
 
   let [fontsLoaded] = useFonts({ Poppins_700Bold, Poppins_400Regular });
   if (!fontsLoaded) return null;
@@ -151,13 +178,9 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.title}>CattleDex</Text>
           </View>
 
-          {/* Carousel Section */}
-          <CustomCarousel data={carouselItems} />
-
           <Text style={styles.subtitle}>What cattle breed are you looking for?</Text>
 
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
+<View style={styles.searchContainer}>
             <Feather name="search" size={22} color="#f8f6f691" />
             <TextInput
               style={styles.searchInput}
@@ -169,6 +192,14 @@ const HomeScreen = ({ navigation }) => {
               returnKeyType="search"
             />
           </View>
+
+          {/* Carousel Section */}
+          <CustomCarousel data={CATTLE_BREEDS} />
+
+          
+
+          {/* Search Bar */}
+          
         </View>
       </SafeAreaView>
 
@@ -188,7 +219,7 @@ const HomeScreen = ({ navigation }) => {
             >
               <Image
                 source={require("../assets/camera.png")}
-                style={{ width: 60, height: 60 }}
+                style={{ width: 160, height: 160 }}
                 resizeMode="contain"
               />
             </TouchableOpacity>
@@ -250,23 +281,34 @@ const styles = StyleSheet.create({
     color: "#020101ff",
   },
 
-  // --- Custom Carousel Styles ---
-  carouselContainer: { marginTop: 20 },
+  // --- Carousel Styles ---
+  carouselContainer: { marginTop: 20,
+    backgroundColor: "rgba(31, 29, 29, 0.12)",
+    borderRadius: 15,
+    overflow: "hidden",
+    shadowColor: "#f1eaea3d",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    paddingVertical: 15
+     },
   carouselItemCustom: {
-    width: width,
+    width: CARD_WIDTH,
+    marginHorizontal: SPACING / 3,
     alignItems: "center",
     justifyContent: "center",
   },
   carouselImageCustom: {
-    width: width * 0.9,
+    width: "100%",
     height: 200,
-    borderRadius: 10,
+    borderRadius: 15,
   },
   carouselTitle: {
     marginTop: 10,
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
+    fontFamily: "Poppins_700Bold",
+    fontSize: 20,
+    color: "#fff",
+    textAlign: "center",
   },
 
   navBar: {
@@ -315,23 +357,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 80,
     height: 80,
-  },
-  gridButton: {
-    width: 130,
-    height: 130,
-    borderRadius: 100,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-  },
-  gridButtonText: {
-    fontFamily: "Poppins_700Bold",
-    color: "white",
-    fontSize: 22,
   },
 });
 
