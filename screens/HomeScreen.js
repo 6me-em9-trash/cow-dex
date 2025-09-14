@@ -84,8 +84,10 @@ const CustomCarousel = ({ data }) => {
 
           return (
             <Animated.View style={[styles.carouselItemCustom, { transform: [{ scale }] }]}>
+              <Text style={styles.carouselHead}>{item.origin}</Text>
               <Image source={{ uri: item.image }} style={styles.carouselImageCustom} resizeMode="cover" />
               <Text style={styles.carouselTitle}>{item.name}</Text>
+              
             </Animated.View>
           );
         }}
@@ -283,14 +285,14 @@ const styles = StyleSheet.create({
 
   // --- Carousel Styles ---
   carouselContainer: { marginTop: 20,
-    backgroundColor: "rgba(31, 29, 29, 0.12)",
+    backgroundColor: "rgba(252, 249, 249, 0.16)",
     borderRadius: 15,
     overflow: "hidden",
-    shadowColor: "#f1eaea3d",
+    shadowColor: "rgba(252, 249, 249, 0.16)",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    paddingVertical: 15
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    
      },
   carouselItemCustom: {
     width: CARD_WIDTH,
@@ -308,6 +310,13 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_700Bold",
     fontSize: 20,
     color: "#fff",
+    textAlign: "center",
+  },
+  carouselHead: {
+    marginTop: 10,
+    fontFamily: "Poppins_700Bold",
+    fontSize: 10,
+    color: "#ffffffc9",
     textAlign: "center",
   },
 

@@ -1,4 +1,3 @@
-// CattleDexScreen.js (or DetailScreen.js)
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -13,7 +12,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n'; // adjust import path
 import CATTLE_BREEDS from '../data/breeds';
 
 const { width, height } = Dimensions.get('window');
@@ -22,9 +22,17 @@ const DetailScreen = ({ route }) => {
   const { breed, color } = route.params;
   const [selectedBreed, setSelectedBreed] = useState(breed);
   const [searchText, setSearchText] = useState('');
-
   const [isFlipped, setIsFlipped] = useState(false);
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const { t } = useTranslation();
+
+  // Mapping characteristic keys to i18n keys
+  const characteristicTranslationKeys = {
+    Horns: 'horns',
+    Color: 'color',
+    Build: 'build',
+    'Conservation Status': 'conservationStatus',
+  };
 
   const frontInterpolate = animatedValue.interpolate({
     inputRange: [0, 180],
@@ -47,7 +55,7 @@ const DetailScreen = ({ route }) => {
     }).start();
   };
 
-  const filteredBreeds = CATTLE_BREEDS.filter(b =>
+  const filteredBreeds = CATTLE_BREEDS.filter((b) =>
     b.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -59,11 +67,10 @@ const DetailScreen = ({ route }) => {
         selectedBreed.id === item.id && styles.selectedSmallBreedCard,
       ]}
       onPress={() => {
-        if (isFlipped) {
-          flipCard();
-        }
+        if (isFlipped) flipCard();
         setSelectedBreed(item);
-      }}>
+      }}
+    >
       <Image source={{ uri: item.image }} style={styles.smallBreedImage} />
       <Text style={styles.smallBreedName}>{item.name}</Text>
     </TouchableOpacity>
@@ -71,6 +78,8 @@ const DetailScreen = ({ route }) => {
 
   return (
     <LinearGradient colors={[color, '#16213e']} style={styles.container}>
+      
+
       <Image
         source={require('../assets/adaptive-icon.png')}
         style={styles.backgroundImage}
@@ -83,7 +92,7 @@ const DetailScreen = ({ route }) => {
           <Icon name="search-outline" size={24} color="#888" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder={t('search')}
             placeholderTextColor="#888"
             value={searchText}
             onChangeText={setSearchText}
@@ -95,7 +104,7 @@ const DetailScreen = ({ route }) => {
         <View style={styles.notificationDot} />
       </View>
 
-      <Text style={styles.title}>CattleDex</Text>
+      <Text style={styles.title}>{t('cattledex')}</Text>
 
       {selectedBreed && (
         <View style={styles.contentArea}>
@@ -103,23 +112,23 @@ const DetailScreen = ({ route }) => {
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={flipCard}
-            style={styles.flippableView}>
-
+            style={styles.flippableView}
+          >
+            <Text style={styles.tapToFlipText}>{t('tapForDetails')}</Text>
             {/* Card Front */}
-            <Animated.View style={[styles.flipCard, styles.flipCardFront, frontAnimatedStyle]}>
+            <Animated.View
+              style={[styles.flipCard, styles.flipCardFront, frontAnimatedStyle]}
+            >
               <LinearGradient
                 colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.mainBreedCard}>
+                style={styles.mainBreedCard}
+              >
                 <View style={styles.mainBreedHeader}>
                   <View>
-                    <Text style={styles.mainBreedLabel}>Origin:</Text>
+                    <Text style={styles.mainBreedLabel}>{t('origin')}:</Text>
                     <Text style={styles.mainBreedInfo}>{selectedBreed.origin}</Text>
-                  </View>
-                  <View style={styles.recentlyAdded}>
-                    <Text style={styles.mainBreedLabel}>Recently</Text>
-                    <Text style={styles.mainBreedInfo}>Scotland</Text>
                   </View>
                 </View>
                 <Image
@@ -128,50 +137,60 @@ const DetailScreen = ({ route }) => {
                   resizeMode="contain"
                 />
                 <Text style={styles.mainBreedName}>{selectedBreed.name}</Text>
-                <Text style={styles.tapToFlipText}>Tap for details</Text>
+                
               </LinearGradient>
             </Animated.View>
 
             {/* Card Back */}
-            <Animated.View style={[styles.flipCard, styles.flipCardBack, backAnimatedStyle]}>
+            <Animated.View
+              style={[styles.flipCard, styles.flipCardBack, backAnimatedStyle]}
+            >
               <LinearGradient
                 colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.mainBreedCard}>
+                style={styles.mainBreedCard}
+              >
                 <ScrollView contentContainerStyle={styles.backCardContentContainer}>
-                  <Text style={styles.mainBreedName}>{selectedBreed.name} Details</Text>
+                  <Text style={styles.mainBreedName}>
+                    {selectedBreed.name} 
+                  </Text>
                   <Text style={styles.descriptionText}>{selectedBreed.description}</Text>
                   <View style={styles.mainBreedDetails}>
                     <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Weight:</Text>
+                      <Text style={styles.detailLabel}>{t('weight')}:</Text>
                       <View style={styles.detailRow}>
                         <Icon name="barbell-outline" size={16} color="#fff" />
                         <Text style={styles.detailValue}>{selectedBreed.stats.weight}</Text>
                       </View>
                     </View>
                     <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Height:</Text>
+                      <Text style={styles.detailLabel}>{t('height')}:</Text>
                       <View style={styles.detailRow}>
                         <Icon name="resize-outline" size={16} color="#fff" />
                         <Text style={styles.detailValue}>{selectedBreed.stats.height}</Text>
                       </View>
                     </View>
                     <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Use:</Text>
+                      <Text style={styles.detailLabel}>{t('use')}:</Text>
                       <View style={styles.detailRow}>
                         <Icon name="hammer-outline" size={16} color="#fff" />
                         <Text style={styles.detailValue}>{selectedBreed.stats.use}</Text>
                       </View>
                     </View>
-                    {selectedBreed.characteristics.map(char => (
+
+                    {/* Characteristics keys translated */}
+                    {selectedBreed.characteristics.map((char) => (
                       <View key={char.key} style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>{char.key}:</Text>
+                        <Text style={styles.detailLabel}>
+                          {t(characteristicTranslationKeys[char.key]) || char.key}:
+                        </Text>
                         <View style={styles.detailRow}>
                           <Icon name={char.icon} size={16} color="#fff" />
                           <Text style={styles.detailValue}>{char.value}</Text>
                         </View>
                       </View>
+                      
                     ))}
                   </View>
                 </ScrollView>
@@ -179,12 +198,36 @@ const DetailScreen = ({ route }) => {
             </Animated.View>
           </TouchableOpacity>
 
+          {/* Language selector */}
+      <View style={styles.languageSelectorContainer}>
+        {['en', 'hi', 'bn', 'ta'].map((langCode) => (
+          <TouchableOpacity
+            key={langCode}
+            style={[
+              styles.languageButton,
+              i18n.language === langCode && styles.languageButtonSelected,
+            ]}
+            onPress={() => i18n.changeLanguage(langCode)}
+          >
+            <Text
+              style={[
+                styles.languageButtonText,
+                i18n.language === langCode && styles.languageButtonTextSelected,
+              ]}
+            >
+              {langCode.toUpperCase()}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
           {/* Horizontal Scroll of Small Breeds */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.smallBreedsScrollView}>
-            {filteredBreeds.slice(0, 5).map(item => renderBreedCard(item))}
+            contentContainerStyle={styles.smallBreedsScrollView}
+          >
+            {filteredBreeds.slice(0, 35).map(renderBreedCard)}
           </ScrollView>
         </View>
       )}
@@ -192,7 +235,6 @@ const DetailScreen = ({ route }) => {
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -201,7 +243,7 @@ const styles = StyleSheet.create({
   backgroundImage: {
     position: 'absolute',
     width: '100%',
-    marginLeft: 20, // ✅ fixed (number, not string)
+    marginLeft: 20,
     height: '100%',
     opacity: 0.1,
   },
@@ -297,12 +339,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  recentlyAdded: {
-    alignItems: 'flex-end',
-  },
   mainBreedImage: {
     width: '100%',
-    height: '45%', // ✅ fixed (removed duplicate)
+    height: '45%',
     borderRadius: 15,
   },
   mainBreedName: {
@@ -315,6 +354,7 @@ const styles = StyleSheet.create({
   tapToFlipText: {
     fontSize: 12,
     color: '#888',
+    textAlign: 'center',
     fontStyle: 'italic',
   },
   mainBreedDetails: {
@@ -370,6 +410,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     textAlign: 'center',
+  },
+
+  // Language selector styles
+  languageSelectorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  languageButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    marginHorizontal: 5,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#888',
+  },
+  languageButtonSelected: {
+    borderColor: '#FFD700',
+    backgroundColor: '#FFD700',
+  },
+  languageButtonText: {
+    color: '#888',
+  },
+  languageButtonTextSelected: {
+    color: '#16213e',
+    fontWeight: 'bold',
   },
 });
 

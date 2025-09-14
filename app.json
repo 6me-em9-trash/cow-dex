@@ -25,6 +25,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "description": "A simple app to tell the breed of the cow"
+    "description": "A simple app to tell the breed of the cow",
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }
