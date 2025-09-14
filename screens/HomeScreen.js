@@ -43,7 +43,7 @@ const CustomCarousel = ({ data }) => {
       });
 
       setCurrentIndex(nextIndex);
-    }, 3000); // 3 seconds auto-scroll
+    }, 1000); // 3 seconds auto-scroll
 
     return () => clearInterval(interval);
   }, [currentIndex]);
@@ -56,7 +56,6 @@ const CustomCarousel = ({ data }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
-        snapToInterval={CARD_WIDTH + SPACING}
         decelerationRate="fast"
         bounces={false}
         contentContainerStyle={{ paddingHorizontal: (width - CARD_WIDTH) / 2 }}
